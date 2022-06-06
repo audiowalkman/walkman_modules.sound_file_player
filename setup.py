@@ -1,6 +1,6 @@
 import setuptools  # type: ignore
 
-MAJOR, MINOR, PATCH = 0, 1, 0
+MAJOR, MINOR, PATCH = 0, 1, 1
 VERSION = f"{MAJOR}.{MINOR}.{PATCH}"
 """This project uses semantic versioning.
 See https://semver.org/
@@ -30,7 +30,7 @@ setuptools.setup(
     setup_requires=[],
     install_requires=[
         # core package
-        "walkman>=0.6.0, <1.0.0",
+        "audiowalkman>=0.6.0, <1.0.0",
         # to convert smaller channel sound files
         # to larger channel sound files
         "SoundFile==0.10.3.post1",
