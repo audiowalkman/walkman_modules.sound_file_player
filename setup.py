@@ -30,7 +30,7 @@ setuptools.setup(
     setup_requires=[],
     install_requires=[
         # core package
-        # "walkman>=0.6.0, <1.0.0",
+        "walkman>=0.6.0, <1.0.0",
         # to convert smaller channel sound files
         # to larger channel sound files
         "SoundFile==0.10.3.post1",
