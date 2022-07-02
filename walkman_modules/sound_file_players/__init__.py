@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dataclasses
 import functools
 import tempfile
 import time
@@ -139,20 +138,26 @@ class TooSmallChannelCountWarning(Warning):
     pass
 
 
-@dataclasses.dataclass
 class SoundFilePlayer(walkman.ModuleWithDecibel):
     """Play sound file."""
 
-    channel_count: int = 1
-    # If set to 'disk': Can be expensive for CPU, but saves RAM.
-    mode: typing.Union[typing.Literal["ram"], typing.Literal["disk"]] = "disk"
-    path_to_sound_file_dict: dict = dataclasses.field(default_factory=lambda: {})
+    def __init__(
+        self,
+        channel_count: int = 1,
+        # If set to 'disk': Can be expensive for CPU, but saves RAM.
+        mode: typing.Union[typing.Literal["ram"], typing.Literal["disk"]] = "disk",
+        path_to_sound_file_dict: dict = {},
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.channel_count = channel_count
+        self.mode = mode
+        self.path_to_sound_file_dict = path_to_sound_file_dict
+        self._current_time: float = 0
+        self._start_time: float = 0
 
-    _current_time: float = 0
-    _start_time: float = 0
-
-    def setup_pyo_object(self):
-        super().setup_pyo_object()
+    def _setup_pyo_object(self):
+        super()._setup_pyo_object()
 
         temporary_file = tempfile.NamedTemporaryFile()
         temporary_file_path = temporary_file.name
@@ -163,7 +168,7 @@ class SoundFilePlayer(walkman.ModuleWithDecibel):
         soundfile.write(temporary_file_path, sound_file_content, 44100, format="wav")
 
         self._sound_file_player = pyo.SfPlayer(
-            temporary_file_path, mul=self._decibel_signal_to, interp=1
+            temporary_file_path, mul=self.amplitude_signal_to, interp=1
         )
         self._sound_file_player.stop()
 
@@ -171,7 +176,9 @@ class SoundFilePlayer(walkman.ModuleWithDecibel):
         self.path_to_sound_file_dict.update({temporary_file_path: self._sound_file})
 
     def _jump_to(self, time_in_seconds: float):
+        self._sound_file_player.stop()
         self._sound_file_player.setOffset(time_in_seconds)
+        self._sound_file_player.play()
 
     def _play(self, duration: float = 0, delay: float = 0):
         super()._play(duration, delay)
@@ -184,11 +191,9 @@ class SoundFilePlayer(walkman.ModuleWithDecibel):
         self._current_time = min(
             ((time.time() - self._start_time) + self._current_time, self.duration)
         )
-        self._sound_file_player.stop(wait=wait)
+        self._sound_file_player.stop(wait=wait + self.fade_out_duration)
 
-    def _initialise(self, path: str, decibel: walkman.Parameter = -6, loop: bool = False):  # type: ignore
-        super()._initialise(decibel=decibel)
-
+    def _initialise(self, path: str, loop: bool = False):  # type: ignore
         self.loop = loop
 
         try:
@@ -219,7 +224,7 @@ class SoundFilePlayer(walkman.ModuleWithDecibel):
 
     @property
     def is_playing(self) -> bool:
-        is_playing = self._is_playing
+        is_playing = super().is_playing
         sound_file_player = self._sound_file_player
         if is_playing and not sound_file_player.isPlaying():
             self._stop()
@@ -231,7 +236,6 @@ class SoundFilePlayer(walkman.ModuleWithDecibel):
         return self._sound_file
 
     @sound_file.setter
-    @reset_sound_file_attribute
     def sound_file(self, sound_file: SoundFile):
         sound_file_player = self._sound_file_player
         if sound_file_player.path != sound_file.path:
@@ -243,7 +247,6 @@ class SoundFilePlayer(walkman.ModuleWithDecibel):
         return self._loop
 
     @loop.setter
-    @reset_sound_file_attribute
     def loop(self, loop: bool):
         self._loop = loop
         sound_file_player = self._sound_file_player
@@ -253,7 +256,6 @@ class SoundFilePlayer(walkman.ModuleWithDecibel):
     def duration(self) -> float:
         return self.sound_file.duration_in_seconds
 
-    @reset_sound_file_attribute
     def jump_to(self, time_in_seconds: float):
         self._current_time = time_in_seconds
         self._jump_to(time_in_seconds)

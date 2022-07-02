@@ -30,11 +30,13 @@ setuptools.setup(
     setup_requires=[],
     install_requires=[
         # core package
-        "audiowalkman>=0.6.0, <1.0.0",
+        "audiowalkman>=0.19.3, <1.0.0",
         # to convert smaller channel sound files
         # to larger channel sound files
-        "SoundFile==0.10.3.post1",
-        "numpy==1.22.3",
+        "SoundFile>=0.10.3.post1",
+        "numpy>=1.23.0, <2.0.0",
+        # for audio
+        "pyo>=1.0.4, <2.0.0",
     ],
     extras_require=extras_require,
     python_requires="==3.8",
